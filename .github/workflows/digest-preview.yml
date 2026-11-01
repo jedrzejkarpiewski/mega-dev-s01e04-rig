@@ -1,0 +1,99 @@
+name: Publish digest preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Marked preview, or clean replacement after review and separate approval
+        type: choice
+        required: true
+        options: [marked, clean]
+      approval:
+        description: Enter publish-marked or replace-after-review for the approved mode
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: digest-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+      actions: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check the explicit approval input
+        env:
+          MODE: ${{ inputs.mode }}
+          APPROVAL: ${{ inputs.approval }}
+        run: |
+          case "$MODE:$APPROVAL" in
+            marked:publish-marked|clean:replace-after-review) ;;
+            *) echo 'The approval input does not match the publication mode.' >&2; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify application
+        run: |
+          pnpm test --maxWorkers=1
+          pnpm typecheck
+
+      - name: Export the real HTTP response outside the checkout
+        env:
+          MODE: ${{ inputs.mode }}
+          LANE_MARKER: ${{ inputs.mode == 'marked' && secrets.LANE_MARKER || '' }}
+        run: |
+          node scripts/export-preview.mjs --mode "$MODE" --out "$RUNNER_TEMP/rig-pages"
+          chmod 644 "$RUNNER_TEMP/rig-pages/index.html"
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload only the HTML export
+        id: artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ${{ runner.temp }}/rig-pages
+          retention-days: 1
+
+      - name: Deploy the export to the existing Pages URL
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Delete the temporary Pages artifact
+        if: always() && steps.artifact.outputs.artifact_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact_id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+
+      - name: Remove temporary runner files
+        if: always()
+        run: |
+          node --input-type=module -e 'import { rm } from "node:fs/promises"; import { join } from "node:path"; await rm(join(process.env.RUNNER_TEMP, "rig-pages"), { recursive: true, force: true }); await rm(join(process.env.RUNNER_TEMP, "artifact.tar"), { force: true });'
