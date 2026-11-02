@@ -3,3 +3,8 @@ var/
 .env
 *.png
 .claude/skills
+
+# Generated preview HTML must never enter repository history (ADR 0003)
+.preview/
+_site/
+coverage/
