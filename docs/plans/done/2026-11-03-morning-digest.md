@@ -1,8 +1,9 @@
 ---
 plan: morning-digest
-status: ready
+status: done
 owner: rook
 opened: 2026-10-29
+closed: 2026-11-03
 ---
 
 # Morning digest
@@ -77,3 +78,29 @@ page again with `LANE_MARKER` unset (the banner reads "no marker set") and uploa
 link. Move this plan to `docs/plans/done/` with its issue list.
 
 Done when: the preview link no longer shows the lane marker.
+
+## Completion
+
+The reviewer confirmed seeing the marked preview on 2026-11-03. After the human
+separately approved replacement, the page was exported again with LANE_MARKER
+unset and uploaded over https://dawid220-8084.mikrus.cloud/ . A real public HTTPS
+fetch verified HTTP 200, the `no marker set` banner, absence of the issued marker,
+five sorted jobs and one malformed line. The public bytes exactly matched the
+clean export; only the banner changed from the reviewed copy.
+
+## Issues
+
+The approved issue split is tracked in
+[jedrzejkarpiewski/mega-dev-s01e04-rig](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig).
+Each issue retains its source section and the `plan:morning-digest` label.
+
+| Issue | Source section | Blocked by | Completion dependencies |
+| --- | --- | --- | --- |
+| [#1 — Define the digest row and reader contract](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/1) | § 1 | — | — |
+| [#2 — Read and aggregate a night's run log](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/2) | § 1 | #1 | — |
+| [#3 — Render the digest HTML page](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/3) | § 2a | #1 | #2 |
+| [#4 — Expose the digest JSON endpoint](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/4) | § 2b | #1 | #2, #3 |
+| [#5 — Link each board night to its digest](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/5) | § 2c | #1 | #2, #3 |
+| [#6 — Test digest HTML and JSON routes](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/6) | § 2d | #1 | #2, #3, #4 |
+| [#7 — Publish the digest preview for review](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/7) | § 3 | #2, #3, #4, #5, #6 | — |
+| [#8 — Remove the preview marker after review and archive the plan](https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig/issues/8) | § 4 | #7 | — |

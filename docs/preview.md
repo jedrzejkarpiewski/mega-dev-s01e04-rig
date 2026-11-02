@@ -4,7 +4,11 @@ Publish one static HTML copy of `GET /digest/2026-10-28` on the user's Mikrus VP
 The source service and JSON endpoint remain on localhost. The VPS only needs a
 static web server; Node.js is needed locally to export the HTML.
 
-The marked preview is live at https://dawid220-8084.mikrus.cloud/ . Nginx serves
+The reviewed preview is live at https://dawid220-8084.mikrus.cloud/ with the
+`no marker set` banner. The human approved the clean replacement after actual
+review; public HTTPS verification confirmed the issued marker is absent.
+The completed plan is archived in `docs/plans/done/2026-11-03-morning-digest.md`.
+Nginx serves
 only the exported HTML from `/srv/s01e04-preview` on `[::]:8084`; Mikrus provides
 the public HTTPS proxy and certificate. The service starts automatically with
 the VPS. GitHub Pages is retired as a deployment target; there is no publication
@@ -15,7 +19,11 @@ https://github.com/jedrzejkarpiewski/mega-dev-s01e04-rig . Its history preserves
 completed implementation and the new template repository's initial commit.
 The original repository and its submission records are retained separately.
 
-## Export the marked page
+## Historical marked export
+
+The marked copy was required only during review. The review and approved cleanup
+are complete; retain these instructions as the publication procedure for future
+plans, and do not reintroduce this completed plan's marker.
 
 Use the existing locked dependencies. Pass the issued `LANE_MARKER` privately in
 the export process environment, then run from the checkout:
