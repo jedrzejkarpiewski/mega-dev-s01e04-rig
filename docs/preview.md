@@ -1,73 +1,72 @@
-# Digest preview
+# Digest preview on Mikrus
 
-The manual `Publish digest preview` workflow publishes one static HTML copy of
-`GET /digest/2026-10-28` on this repository's GitHub Pages site. The Node service
-and JSON endpoint continue to run only on localhost. No push triggers publication.
+Publish one static HTML copy of `GET /digest/2026-10-28` on the user's Mikrus VPS.
+The source service and JSON endpoint remain on localhost. The VPS only needs a
+static web server; Node.js is needed locally to export the HTML.
 
-## Approval before publication
+SSH key authentication has been verified. The web server, public HTTPS hostname
+and initial upload still need to be configured. GitHub Pages is retired as a
+deployment target; there is no publication workflow in this checkout.
 
-Before the first dispatch, ask the human to approve this named set of actions:
+## Export the marked page
 
-1. Enable GitHub Pages with GitHub Actions as its source in
-   `0x54656f/mega-dev-s01e04-rig`.
-2. Store the issued marker as the repository Actions secret `LANE_MARKER` without
-   putting its value in arguments, logs, Git history, issues, or attachments.
-3. Publish the marked sample digest to the public HTTPS Pages URL and send that URL
-   and the plan's issues to the course reviewer.
-4. Delete the temporary Pages Actions artifact after deployment. A one-day
-   retention is the fallback if cleanup cannot run. Remove the marker secret when
-   the preview has been verified and no marked retry is needed.
-
-Anyone can read the published HTML. It contains the template's sample run data,
-the sample lane ID, and the course marker. The marker is temporary public review
-data, not a credential. The expected project URL is
-`https://0x54656f.github.io/mega-dev-s01e04-rig/`; use the actual successful deployment
-output and fetch that URL before claiming it is live.
-
-## Deploy and review
-
-Use the workflow on `main` with `mode=marked` and `approval=publish-marked` only
-after that approval. The exporter starts the real server on an ephemeral loopback
-port, fetches its HTML, checks the banner, and saves only `index.html` under
-`runner.temp`. It starts Node without loading `.env`; the marker is passed only to
-that export step. Dependencies are installed from the lockfile and the application
-tests and typecheck must pass before uploading.
-
-After deployment, fetch the public HTTPS URL and check the sample digest and the
-issued banner privately. Confirm the run has no remaining Pages artifact, then
-send the reviewer the repository, preview URL, and issue list. Leave cleanup issue
-#8 open until the reviewer has actually reviewed the preview.
-
-## Replace after review
-
-After review, obtain a **separate human approval** to replace the marked page.
-Dispatch the same workflow on `main` with `mode=clean` and
-`approval=replace-after-review`. This mode removes `LANE_MARKER` from the service's
-environment and never loads `.env`, even if a local file or repository secret
-still exists. It exports the same page with `no marker set` and deploys over the
-same URL. Fetch that URL again, confirm the old marker is absent and `no marker
-set` is present, and remove any remaining marked artifact or marker secret.
-
-Only then archive `plan.md` with the real issue list and close issue #8 with its
-worker and commit metadata. Submitting a URL alone is not the review trigger.
-
-## Local export
-
-Install dependencies, set `LANE_MARKER` privately in the environment for a marked
-export, then run:
+Use the existing locked dependencies. Pass the issued `LANE_MARKER` privately in
+the export process environment, then run from the checkout:
 
 ```sh
 node scripts/export-preview.mjs --mode marked --out .preview/digest
+```
+
+The exporter starts the real service on an ephemeral loopback port without loading
+`.env`, fetches the exact HTML response, checks its banner and self-contained
+structure, and saves only `index.html`. It never prints the HTML or marker.
+Output inside the checkout must stay under ignored `.preview/` or `_site/`.
+Never commit or attach the generated file, `.env`, or an SSH private key.
+
+## Upload and verify
+
+The shared local SSH alias is `mikrus`. Its identity and host keys live in the
+user's SSH directory outside this repository. Use `ssh -o BatchMode=yes mikrus`
+for noninteractive operations; normal execution/network approvals still apply.
+
+Configure a static web root, proposed as `/srv/s01e04-preview`, and a public HTTPS
+hostname before uploading. Serve only the exported HTML from that directory.
+Mikrus's managed HTTPS subdomains require the HTTP listener to be reachable over
+IPv6; see its [subdomain documentation](https://wiki.mikr.us/darmowa_subdomena_dla_vps/).
+
+Once that web root and hostname have been confirmed, upload and replace the file:
+
+```sh
+scp .preview/digest/index.html mikrus:/srv/s01e04-preview/index.html.next
+ssh -o BatchMode=yes mikrus 'chmod 644 /srv/s01e04-preview/index.html.next && mv /srv/s01e04-preview/index.html.next /srv/s01e04-preview/index.html'
+```
+
+Fetch the actual public HTTPS URL before reporting a deployment. Privately verify
+HTTP 200, the issued marker, five sample jobs, one malformed line, and no external
+assets or client scripts. Record the verified URL and content hash outside Git.
+
+The previous course claim used a different host. Preserve its receipts and exact
+answer, then check the course's current instructions before submitting a new
+preview address. A host change alone is not evidence that the review discrepancy
+has been resolved. Keep cleanup issue #8 open until actual review.
+
+## Replace after review
+
+After actual review and the separately required approval for marker removal,
+export a clean copy:
+
+```sh
 node scripts/export-preview.mjs --mode clean --out .preview/digest
 ```
 
-Output inside the checkout is restricted to ignored `.preview/` or `_site/`
-directories. The output directory may contain only `index.html`. Exports never
-print their HTML or marker. Do not commit or attach the generated file.
+Clean mode unsets `LANE_MARKER` and does not load `.env`. Upload this copy over the
+same Mikrus URL and verify `no marker set` is present and the issued marker is
+absent. Only then archive `plan.md` with its issue list and close issue #8.
 
-To withdraw the whole preview, disable Pages in repository settings. To remove
-only the marker, replace the same URL using the approved clean dispatch. Public
-readers may already have saved a copy, so replacement cannot recall their copies.
+## Previous deployment
 
-The workflow follows GitHub's [custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)
-and [Pages artifact action](https://github.com/actions/upload-pages-artifact).
+Deleting the local Pages workflow does not withdraw an existing remote Pages
+site. The historical deployment and saved verification evidence remain in the
+parent challenge records. Retiring the old remote site still needs to be handled
+when GitHub account access is restored; no remote withdrawal has been performed
+as part of this local checkpoint.
